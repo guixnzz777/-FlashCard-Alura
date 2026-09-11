@@ -1,0 +1,1012 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐱 Gato Ninja — Fuga do Aspirador</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background:
+        radial-gradient(circle at 50% 20%, #29345c 0%, #101426 55%, #070a13 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.game-wrapper {
+    width: min(1100px, 95vw);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.title {
+    font-size: clamp(22px, 4vw, 38px);
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.title span {
+    color: #ffcf4a;
+}
+
+.stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+#game {
+    position: relative;
+    width: 100%;
+    height: min(520px, 68vh);
+    min-height: 360px;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 2px solid rgba(255,255,255,.12);
+    background:
+        linear-gradient(#151d38 0%, #1b2546 65%, #27355b 100%);
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.45),
+        inset 0 0 50px rgba(0,0,0,.2);
+}
+
+/* LUA */
+
+.moon {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #fff4bd;
+    right: 12%;
+    top: 10%;
+    box-shadow: 0 0 45px rgba(255,244,189,.45);
+}
+
+.star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: white;
+    opacity: .8;
+}
+
+/* CHÃO */
+
+.ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 90px;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            #18213d 0px,
+            #18213d 30px,
+            #202b4b 31px,
+            #202b4b 60px
+        );
+    border-top: 3px solid #4c5e86;
+}
+
+.ground::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 20px;
+    height: 3px;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0 50px,
+        #56688e 50px 80px,
+        transparent 80px 120px
+    );
+}
+
+/* GATO */
+
+#cat {
+    position: absolute;
+    width: 62px;
+    height: 62px;
+    left: 12%;
+    bottom: 90px;
+    z-index: 10;
+    transition: transform .05s linear;
+}
+
+.cat-body {
+    position: absolute;
+    width: 45px;
+    height: 42px;
+    background: #f29b38;
+    border-radius: 50% 50% 40% 40%;
+    bottom: 0;
+    left: 8px;
+}
+
+.cat-head {
+    position: absolute;
+    width: 42px;
+    height: 40px;
+    background: #ffad45;
+    border-radius: 50%;
+    top: 2px;
+    left: 10px;
+    z-index: 3;
+}
+
+.ear {
+    position: absolute;
+    width: 18px;
+    height: 21px;
+    background: #ffad45;
+    top: -9px;
+    transform: rotate(35deg);
+}
+
+.ear.left {
+    left: 3px;
+    border-radius: 5px 15px 0 10px;
+}
+
+.ear.right {
+    right: 3px;
+    transform: rotate(-35deg);
+    border-radius: 15px 5px 10px 0;
+}
+
+.eye {
+    position: absolute;
+    width: 7px;
+    height: 10px;
+    background: #17203b;
+    border-radius: 50%;
+    top: 15px;
+}
+
+.eye.left { left: 10px; }
+.eye.right { right: 10px; }
+
+.nose {
+    position: absolute;
+    width: 7px;
+    height: 6px;
+    background: #d65a71;
+    border-radius: 50%;
+    left: 18px;
+    top: 25px;
+}
+
+.whisker {
+    position: absolute;
+    width: 18px;
+    height: 1px;
+    background: white;
+    opacity: .65;
+}
+
+.w1 { left: -8px; top: 24px; transform: rotate(-8deg); }
+.w2 { left: -8px; top: 30px; transform: rotate(8deg); }
+.w3 { right: -8px; top: 24px; transform: rotate(8deg); }
+.w4 { right: -8px; top: 30px; transform: rotate(-8deg); }
+
+.tail {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 7px solid #f29b38;
+    border-left-color: transparent;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    right: -12px;
+    bottom: 7px;
+    transform: rotate(20deg);
+}
+
+/* ANIMAÇÃO DO GATO */
+
+.running .cat-body {
+    animation: bodyRun .18s infinite alternate;
+}
+
+.running .tail {
+    animation: tailMove .18s infinite alternate;
+}
+
+@keyframes bodyRun {
+    from { transform: translateY(0); }
+    to { transform: translateY(-3px); }
+}
+
+@keyframes tailMove {
+    from { transform: rotate(10deg); }
+    to { transform: rotate(30deg); }
+}
+
+/* OBSTÁCULOS */
+
+.obstacle {
+    position: absolute;
+    bottom: 90px;
+    z-index: 8;
+}
+
+.vacuum {
+    width: 58px;
+    height: 62px;
+    background: #5c647e;
+    border-radius: 12px 12px 8px 8px;
+    border: 3px solid #838ba4;
+    box-shadow: 0 8px 15px rgba(0,0,0,.3);
+}
+
+.vacuum::before {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 8px;
+    background: #20263a;
+    border-radius: 5px;
+    top: 12px;
+    left: 11px;
+}
+
+.vacuum::after {
+    content: "😈";
+    position: absolute;
+    font-size: 19px;
+    left: 17px;
+    top: 25px;
+}
+
+.wheel {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #101522;
+    bottom: -7px;
+}
+
+.wheel.one { left: 7px; }
+.wheel.two { right: 7px; }
+
+/* PEIXE */
+
+.fish {
+    position: absolute;
+    width: 42px;
+    height: 27px;
+    z-index: 7;
+    font-size: 34px;
+    filter: drop-shadow(0 0 8px rgba(255,210,60,.5));
+}
+
+/* DASH */
+
+#dashEffect {
+    position: absolute;
+    width: 100px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(80,200,255,.5),
+        transparent
+    );
+    opacity: 0;
+    z-index: 5;
+}
+
+.dashing #dashEffect {
+    opacity: 1;
+    animation: dashFlash .25s;
+}
+
+@keyframes dashFlash {
+    from { transform: translateX(0) scale(.6); }
+    to { transform: translateX(-70px) scale(1.4); opacity: 0; }
+}
+
+/* MENU */
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5,8,18,.76);
+    backdrop-filter: blur(7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.panel {
+    text-align: center;
+    padding: 30px;
+    max-width: 500px;
+}
+
+.panel h1 {
+    font-size: clamp(35px, 7vw, 65px);
+    margin-bottom: 10px;
+}
+
+.panel p {
+    color: #c7cce0;
+    line-height: 1.6;
+    margin-bottom: 22px;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    padding: 15px 25px;
+    border-radius: 14px;
+    background: #ffca3a;
+    color: #171717;
+    font-size: 17px;
+    font-weight: 900;
+    transition: .2s;
+}
+
+button:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(255,202,58,.25);
+}
+
+.hidden {
+    display: none;
+}
+
+.controls {
+    margin-top: 12px;
+    color: #8993af;
+    text-align: center;
+    font-size: 14px;
+}
+
+kbd {
+    background: #252d46;
+    border: 1px solid #46516f;
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: white;
+}
+
+#combo {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffdb5b;
+    opacity: 0;
+    z-index: 30;
+    pointer-events: none;
+}
+
+.comboShow {
+    animation: combo .8s;
+}
+
+@keyframes combo {
+    0% { opacity: 0; transform: translate(-50%,20px) scale(.6); }
+    25% { opacity: 1; transform: translate(-50%,0) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%,-30px) scale(1); }
+}
+
+@media(max-width:600px) {
+    #game {
+        height: 55vh;
+    }
+
+    .stats {
+        gap: 5px;
+    }
+
+    .stat {
+        padding: 7px 9px;
+        font-size: 12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+<header>
+    <div class="title">🐱 Gato <span>Ninja</span></div>
+
+    <div class="stats">
+        <div class="stat">🐟 <span id="score">0</span></div>
+        <div class="stat">🏆 <span id="high">0</span></div>
+    </div>
+</header>
+
+<div id="game">
+
+    <div class="moon"></div>
+
+    <div class="star" style="left:8%;top:14%"></div>
+    <div class="star" style="left:22%;top:28%"></div>
+    <div class="star" style="left:36%;top:12%"></div>
+    <div class="star" style="left:51%;top:25%"></div>
+    <div class="star" style="left:68%;top:15%"></div>
+    <div class="star" style="left:82%;top:32%"></div>
+    <div class="star" style="left:91%;top:12%"></div>
+    <div class="star" style="left:73%;top:42%"></div>
+
+    <div id="combo">COMBO!</div>
+
+    <div id="cat" class="running">
+
+        <div class="tail"></div>
+
+        <div class="cat-body"></div>
+
+        <div class="cat-head">
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+
+            <div class="nose"></div>
+
+            <div class="whisker w1"></div>
+            <div class="whisker w2"></div>
+            <div class="whisker w3"></div>
+            <div class="whisker w4"></div>
+        </div>
+
+        <div id="dashEffect"></div>
+    </div>
+
+    <div class="ground"></div>
+
+    <div id="startScreen" class="overlay">
+        <div class="panel">
+            <h1>🐱</h1>
+            <h2>GATO NINJA</h2>
+            <p>
+                O aspirador maligno está atrás de você!
+                <br>
+                Pule, faça dash e roube o máximo de peixes possível.
+            </p>
+
+            <button onclick="startGame()">COMEÇAR</button>
+
+            <p style="margin-top:15px;font-size:13px">
+                <kbd>ESPAÇO</kbd> / <kbd>↑</kbd> pular
+                &nbsp; • &nbsp;
+                <kbd>SHIFT</kbd> dash
+            </p>
+        </div>
+    </div>
+
+    <div id="gameOver" class="overlay hidden">
+        <div class="panel">
+            <h1>💥</h1>
+            <h2>O ASPIRADOR PEGOU VOCÊ!</h2>
+
+            <p>
+                Pontuação:
+                <strong id="finalScore">0</strong>
+            </p>
+
+            <button onclick="startGame()">TENTAR NOVAMENTE</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="controls">
+    🟡 Pegue peixes &nbsp; • &nbsp;
+    🔵 Use o dash &nbsp; • &nbsp;
+    🔴 Não seja sugado
+</div>
+
+</div>
+
+<script>
+
+/* ================================
+   CONFIGURAÇÕES
+================================ */
+
+const game = document.getElementById("game");
+const cat = document.getElementById("cat");
+
+const scoreEl = document.getElementById("score");
+const highEl = document.getElementById("high");
+
+const startScreen = document.getElementById("startScreen");
+const gameOver = document.getElementById("gameOver");
+
+const finalScore = document.getElementById("finalScore");
+const comboEl = document.getElementById("combo");
+
+let score = 0;
+let high = Number(localStorage.getItem("catHighScore")) || 0;
+
+let running = false;
+
+let catY = 0;
+let velocity = 0;
+
+let gravity = 0.9;
+let jumpPower = 17;
+
+let speed = 7;
+
+let objects = [];
+
+let lastTime = 0;
+let obstacleTimer = 0;
+let fishTimer = 0;
+
+let canDash = true;
+let dashTime = 0;
+
+let combo = 0;
+
+highEl.textContent = high;
+
+
+/* ================================
+   COMEÇAR
+================================ */
+
+function startGame() {
+
+    score = 0;
+    speed = 7;
+
+    catY = 0;
+    velocity = 0;
+
+    obstacleTimer = 0;
+    fishTimer = 0;
+
+    combo = 0;
+
+    canDash = true;
+    dashTime = 0;
+
+    objects.forEach(o => o.el.remove());
+    objects = [];
+
+    scoreEl.textContent = "0";
+
+    startScreen.classList.add("hidden");
+    gameOver.classList.add("hidden");
+
+    running = true;
+
+    cat.classList.add("running");
+
+    lastTime = performance.now();
+
+    requestAnimationFrame(loop);
+}
+
+
+/* ================================
+   PULO
+================================ */
+
+function jump() {
+
+    if (!running) return;
+
+    // Só permite pular quando estiver no chão
+    if (catY <= 0) {
+
+        velocity = jumpPower;
+
+        // pequeno efeito
+        cat.style.transform = "rotate(-8deg)";
+    }
+}
+
+
+/* ================================
+   DASH
+================================ */
+
+function dash() {
+
+    if (!running || !canDash) return;
+
+    canDash = false;
+    dashTime = 350;
+
+    cat.classList.add("dashing");
+
+    // Dash também dá pontos
+    score += 5;
+    scoreEl.textContent = score;
+
+    setTimeout(() => {
+        cat.classList.remove("dashing");
+    }, 250);
+
+    setTimeout(() => {
+        canDash = true;
+    }, 1400);
+}
+
+
+/* ================================
+   TECLADO
+================================ */
+
+document.addEventListener("keydown", e => {
+
+    if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+        jump();
+    }
+
+    if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        dash();
+    }
+
+    if (e.code === "Enter" && !running) {
+        startGame();
+    }
+});
+
+
+/* ================================
+   MOBILE
+================================ */
+
+game.addEventListener("pointerdown", e => {
+
+    if (!running) return;
+
+    // metade esquerda = pulo
+    if (e.clientX < window.innerWidth / 2) {
+        jump();
+    } else {
+        dash();
+    }
+});
+
+
+/* ================================
+   CRIAR OBSTÁCULO
+================================ */
+
+function createObstacle() {
+
+    const obstacle = document.createElement("div");
+
+    obstacle.className = "obstacle vacuum";
+
+    obstacle.innerHTML = `
+        <div class="wheel one"></div>
+        <div class="wheel two"></div>
+    `;
+
+    obstacle.style.left = game.offsetWidth + "px";
+
+    game.appendChild(obstacle);
+
+    objects.push({
+        type: "obstacle",
+        el: obstacle,
+        x: game.offsetWidth
+    });
+}
+
+
+/* ================================
+   CRIAR PEIXE
+================================ */
+
+function createFish() {
+
+    const fish = document.createElement("div");
+
+    fish.className = "fish";
+    fish.textContent = "🐟";
+
+    fish.style.left = game.offsetWidth + "px";
+
+    // Alturas diferentes
+    const heights = [130, 180, 230];
+
+    fish.style.bottom =
+        heights[Math.floor(Math.random() * heights.length)] + "px";
+
+    game.appendChild(fish);
+
+    objects.push({
+        type: "fish",
+        el: fish,
+        x: game.offsetWidth
+    });
+}
+
+
+/* ================================
+   COLISÃO
+================================ */
+
+function collision(a, b) {
+
+    const r1 = a.getBoundingClientRect();
+    const r2 = b.getBoundingClientRect();
+
+    return !(
+        r1.right < r2.left ||
+        r1.left > r2.right ||
+        r1.bottom < r2.top ||
+        r1.top > r2.bottom
+    );
+}
+
+
+/* ================================
+   PEGAR PEIXE
+================================ */
+
+function collectFish(obj) {
+
+    obj.el.remove();
+
+    combo++;
+
+    let points = 10 + combo * 2;
+
+    score += points;
+
+    scoreEl.textContent = score;
+
+    comboEl.textContent =
+        combo > 2
+            ? `🔥 COMBO x${combo} +${points}`
+            : `🐟 +${points}`;
+
+    comboEl.classList.remove("comboShow");
+
+    void comboEl.offsetWidth;
+
+    comboEl.classList.add("comboShow");
+}
+
+
+/* ================================
+   GAME OVER
+================================ */
+
+function lose() {
+
+    running = false;
+
+    cat.classList.remove("running");
+
+    finalScore.textContent = score;
+
+    if (score > high) {
+
+        high = score;
+
+        localStorage.setItem(
+            "catHighScore",
+            high
+        );
+
+        highEl.textContent = high;
+    }
+
+    gameOver.classList.remove("hidden");
+}
+
+
+/* ================================
+   LOOP PRINCIPAL
+================================ */
+
+function loop(time) {
+
+    if (!running) return;
+
+    const dt = Math.min(
+        (time - lastTime) / 16.67,
+        2
+    );
+
+    lastTime = time;
+
+    /* ----------------
+       FÍSICA
+    ---------------- */
+
+    velocity -= gravity * dt;
+
+    catY += velocity * dt;
+
+    if (catY < 0) {
+
+        catY = 0;
+        velocity = 0;
+
+        cat.style.transform = "rotate(0deg)";
+    }
+
+    cat.style.bottom =
+        (90 + catY) + "px";
+
+
+    /* ----------------
+       DIFICULDADE
+    ---------------- */
+
+    speed += 0.002 * dt;
+
+    // limite para não ficar impossível
+    speed = Math.min(speed, 18);
+
+
+    /* ----------------
+       SPAWN
+    ---------------- */
+
+    obstacleTimer += dt;
+    fishTimer += dt;
+
+    if (obstacleTimer >
+        Math.max(55, 115 - speed * 3)) {
+
+        createObstacle();
+
+        obstacleTimer = 0;
+    }
+
+    if (fishTimer >
+        Math.max(70, 150 - speed * 2)) {
+
+        createFish();
+
+        fishTimer = 0;
+    }
+
+
+    /* ----------------
+       OBJETOS
+    ---------------- */
+
+    for (let i = objects.length - 1; i >= 0; i--) {
+
+        const obj = objects[i];
+
+        obj.x -= speed * dt;
+
+        obj.el.style.left =
+            obj.x + "px";
+
+
+        /* PEIXE */
+
+        if (obj.type === "fish") {
+
+            if (collision(cat, obj.el)) {
+
+                collectFish(obj);
+
+                objects.splice(i, 1);
+
+                continue;
+            }
+
+            // saiu da tela
+            if (obj.x < -70) {
+
+                combo = 0;
+
+                obj.el.remove();
+
+                objects.splice(i, 1);
+            }
+
+        }
+
+
+        /* OBSTÁCULO */
+
+        else {
+
+            if (
+                collision(cat, obj.el) &&
+                dashTime <= 0
+            ) {
+
+                lose();
+                return;
+            }
+
+            if (obj.x < -80) {
+
+                obj.el.remove();
+
+                objects.splice(i, 1);
+            }
+        }
+    }
+
+
+    /* ----------------
+       DASH
+    ---------------- */
+
+    if (dashTime > 0) {
+        dashTime -= 16.67 * dt;
+    }
+
+
+    requestAnimationFrame(loop);
+}
+
+
+/* ================================
+   PARALLAX SIMPLES
+================================ */
+
+let bgOffset = 0;
+
+function backgroundAnimation() {
+
+    if (running) {
+
+        bgOffset -= speed * .08;
+
+        game.style.backgroundPosition =
+            bgOffset + "px 0";
+    }
+
+    requestAnimationFrame(backgroundAnimation);
+}
+
+backgroundAnimation();
+
+</script>
+
+</body>
+</html>
+```
